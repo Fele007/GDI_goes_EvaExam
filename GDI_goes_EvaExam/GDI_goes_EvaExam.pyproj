@@ -25,6 +25,9 @@
     <Compile Include="GDI_goes_EvaExam.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
+  </ItemGroup>
+  <ItemGroup>
     <Interpreter Include="env_GDI_goes_EvaExam\">
       <Id>env_GDI_goes_EvaExam</Id>
       <Version>3.8</Version>
@@ -34,9 +37,6 @@
       <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
       <Architecture>X64</Architecture>
     </Interpreter>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include=".gitignore" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
