@@ -7,7 +7,7 @@ fileobj="Test.docx"
 def transform_run(run):
     return run#.copy(style_id="code", style_name="Code")
 
-def rreplace(s, old, new, occurrence):
+def rreplace(s, old, new, occurrence=-1):
  li = s.rsplit(old, occurrence)
  return new.join(li)
 
@@ -15,35 +15,42 @@ html_string = mammoth.convert_to_html(
     fileobj,
     transform_document=mammoth.transforms.paragraph(transform_run),
     style_map=  """
-                   b => b                
+                   b => b
+                   i => i
     """
 ).value
 
-############# HTML-String RegEx ###############
+############ Check for common mistakes #######
 lists = re.compile('(</?ul>)|(</?li>)')
 if lists.search(html_string):
     print("Found list items or list templates (Formatvorlagen)! Clear your input, please!")
     exit()
-paragraphs = re.compile('<p>')
-html_string = paragraphs.sub('', html_string)
-breaks = re.compile('</p>')
-html_string = breaks.sub('</br>', html_string)
+
+############# HTML-String RegEx ###############
+
+# Handle paragraphs
+paragraphs = re.compile('<p>(.*?)</p>')
+html_string = paragraphs.sub(r'\1</br>', html_string)
 # Remove everything until first group
-groups = re.compile('.*?(Group: .*?)</br>')
-html_string = groups.sub(r'\1\n\n', html_string,1)
+html_string = re.compile(r'.*?(Group: .+?</br>)').sub(r'\1', html_string, 1)
 # Find groups
-groups = re.compile('(Group: .*?)</br>')
-html_string = groups.sub(r'\n\n\1\n\n', html_string)
+groups = re.compile(r'(Group: .+?)</br>')
+html_string = groups.sub(r'\n\n\n\1', html_string)
+# Find Questiontags
+#   print(re.compile(r'((<[\w/]*>)|\s+)*SC(<[\w/]*>)*\s*</br>').search(html_string).group())
+html_string = re.compile(r'((<[\w/]*>)|\s+)*SC(<[\w/]*>)*\s*</br>').sub(r'\n\nSC\n', html_string)
 # Find Questions
-questions = re.compile(r'SC.*?</br>').split(html_string)
-new_html_string = questions[0]
-for question in questions[1:]:
-    #question = questions.sub(r'\n\nSC\n', question)
-    question = rreplace(question, '</br>', '\n', 5)
-    question = '\n\nSC\n' + question
-    new_html_string = new_html_string + question
-html_string = new_html_string
+questions = re.compile(r'\n\nSC\n').split(html_string)
+html_string = ""
+for question in questions:
+    # Find answers
+    #answer = re.compile(r'(<[\w/]*?>)*(\d\t.*?)(<[\w/]*?>)*')
+    answer = re.compile(r'(<[\w/]*?>)*(\d\t)')
+    print(answer.findall(question))
+    question = answer.sub(r'\n\2', question)
+    html_string += question + '\n\nSC\n'
+# Remove unnecessary SC at the end
+html_string = rreplace(html_string, '\n\nSC\n', '', 1)
 
 with open('output.txt', 'w') as html_file:
         html_file.write(html_string)
-
