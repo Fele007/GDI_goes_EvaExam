@@ -1,6 +1,9 @@
 import mammoth.documents
 import mammoth.transforms
 import re
+from PyRTF.Elements import Document
+from PyRTF.document.section import Section
+from PyRTF.document.paragraph import Paragraph
 
 fileobj="Test.docx"
 
@@ -13,7 +16,7 @@ def rreplace(s, old, new, occurrence=-1):
 
 html_string = mammoth.convert_to_html(
     fileobj,
-    transform_document=mammoth.transforms.paragraph(transform_run),
+    #transform_document=mammoth.transforms.paragraph(transform_run),
     style_map=  """
                    b => b
                    i => i
@@ -54,3 +57,17 @@ html_string = rreplace(html_string, '\n\nSC\n', '', 1)
 
 with open('output.txt', 'w') as html_file:
         html_file.write(html_string)
+
+def OpenFile(name):
+    return open('%s.rtf' % name, 'w')
+
+doc = Document()
+ss = doc.StyleSheet
+section = Section()
+doc.Sections.append(section)
+
+p = Paragraph(ss.ParagraphStyles.Normal)
+p.append(html_string)
+section.append(p)
+
+doc.write('output.rtf')
