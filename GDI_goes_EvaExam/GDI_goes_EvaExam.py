@@ -1,9 +1,6 @@
 import mammoth.documents
 import mammoth.transforms
 import re
-from PyRTF.Elements import Document
-from PyRTF.document.section import Section
-from PyRTF.document.paragraph import Paragraph
 
 fileobj="Test.docx"
 
@@ -51,23 +48,10 @@ for question in questions:
     answer = re.compile(r'(<[\w/]*?>)*(\d\t)')
     print(answer.findall(question))
     question = answer.sub(r'\n\2', question)
+    question = rreplace(question, '\t', '&nbsp;&nbsp;&nbsp;&nbsp;')
     html_string += question + '\n\nSC\n'
 # Remove unnecessary SC at the end
 html_string = rreplace(html_string, '\n\nSC\n', '', 1)
 
 with open('output.txt', 'w') as html_file:
         html_file.write(html_string)
-
-def OpenFile(name):
-    return open('%s.rtf' % name, 'w')
-
-doc = Document()
-ss = doc.StyleSheet
-section = Section()
-doc.Sections.append(section)
-
-p = Paragraph(ss.ParagraphStyles.Normal)
-p.append(html_string)
-section.append(p)
-
-doc.write('output.rtf')
