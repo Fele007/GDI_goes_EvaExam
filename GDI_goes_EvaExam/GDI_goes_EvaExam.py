@@ -2,7 +2,7 @@ import mammoth.documents
 import mammoth.transforms
 import re
 
-fileobj="Test.docx"
+fileobj="Sammlung.docx"
 
 html_string = mammoth.convert_to_html(
     fileobj,
@@ -27,7 +27,7 @@ def rreplace(s, old, new, occurrence=-1):
 paragraphs = re.compile('<p>(.*?)</p>')
 html_string = paragraphs.sub(r'\1</br>', html_string)
 # Remove everything until first group
-html_string = re.compile(r'.*?(Group: .+?</br>)').sub(r'\1', html_string, 1)
+html_string = re.compile(r'.*?(Group: .+?)</br>').sub(r'\1\n\n', html_string, 1)
 # Find groups
 groups = re.compile(r'(Group: .+?)</br>')
 html_string = groups.sub(r'\n\n\n\1', html_string)
@@ -35,7 +35,7 @@ html_string = groups.sub(r'\n\n\n\1', html_string)
 html_string = re.compile(r'((<[\w/]*>)|\s+)*SC(<[\w/]*>)*\s*</br>').sub(r'\n\nSC\n', html_string)
 # Find Questions
 tasks = re.compile(r'\n\nSC\n').split(html_string)
-html_string = tasks[0]
+html_string = tasks[0] + '\n\nSC\n'
 for task in tasks[1:]:
     difficulty = 0
     # Find answers
@@ -49,12 +49,15 @@ for task in tasks[1:]:
         # Split question and answers to substitute tabs with html
         question_and_answer = answer.split(task, 1)
         task = question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;') + question_and_answer[1] + question_and_answer[2].replace('</br>', '\n')
-        #print(task)
         print(re.compile(r'(Explanation: .*)').findall(task))
         task = re.compile(r'((Explanation: )[\w/]+)').sub(r'\1\nDifficulty: ' + str(difficulty) + '\n', task)
     html_string += task + '\n\nSC\n'
 # Remove unnecessary SC at the end
 html_string = rreplace(html_string, '\n\nSC\n', '', 1)
+############ Fix known formatting errors that are safely identifiable
+html_string = re.compile(r'<strong>').sub('<b>', html_string)
+html_string = re.compile(r'</strong>').sub('</b>', html_string)
+
 ############# Write document
 with open('output.txt', 'w') as html_file:
         html_file.write(html_string)
