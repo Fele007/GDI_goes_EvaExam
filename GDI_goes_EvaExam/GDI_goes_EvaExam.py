@@ -25,14 +25,14 @@ def rreplace(s, old, new, occurrence=-1):
  return new.join(li)
 # Handle paragraphs
 paragraphs = re.compile('<p>(.*?)</p>')
-html_string = paragraphs.sub(r'\1</br>', html_string)
+html_string = paragraphs.sub(r'\1<br>', html_string)
 # Remove everything until first group
-html_string = re.compile(r'.*?(Group: .+?)</br>').sub(r'\1\n\n', html_string, 1)
+html_string = re.compile(r'.*?(Group: .+?)<br>').sub(r'\1\n\n', html_string, 1)
 # Find groups
-groups = re.compile(r'(Group: .+?)</br>')
+groups = re.compile(r'(Group: .+?)<br>')
 html_string = groups.sub(r'\n\n\n\1', html_string)
 # Find Questiontags
-html_string = re.compile(r'((<[\w/]*>)|\s+)*SC(<[\w/]*>)*\s*</br>').sub(r'\n\nSC\n', html_string)
+html_string = re.compile(r'((<[\w/]*>)|\s+)*SC(<[\w/]*>)*\s*<br>').sub(r'\n\nSC\n', html_string)
 # Find Questions
 tasks = re.compile(r'\n\nSC\n').split(html_string)
 html_string = tasks[0] + '\n\nSC\n'
@@ -48,7 +48,7 @@ for task in tasks[1:]:
         task = answer.sub(r'\n\1', task)
         # Split question and answers to substitute tabs with html
         question_and_answer = answer.split(task, 1)
-        task = question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;') + question_and_answer[1] + question_and_answer[2].replace('</br>', '\n')
+        task = question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;') + question_and_answer[1] + question_and_answer[2].replace('<br>', '\n')
         task = re.compile(r'((Explanation: )[\w/]+)').sub(r'\1\nDifficulty: ' + str(difficulty) + '\n', task)
     html_string += task + '\n\nSC\n'
 # Remove unnecessary SC at the end
