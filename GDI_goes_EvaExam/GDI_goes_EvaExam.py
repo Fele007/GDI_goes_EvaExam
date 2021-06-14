@@ -48,7 +48,7 @@ for task in tasks[1:]:
         task = answer.sub(r'\n\1', task)
         # Split question and answers to substitute tabs with html
         question_and_answer = answer.split(task, 1)
-        task = question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;') + question_and_answer[1] + question_and_answer[2].replace('<br>', '\n')
+        task = rreplace(question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;'), '\n', '', 1) + f' <b>({difficulty}P)</b>\n' + question_and_answer[1] + question_and_answer[2].replace('<br>', '\n')
         task = re.compile(r'((Explanation: )[\w/]+)').sub(r'\1\nDifficulty: ' + str(difficulty) + '\n', task)
     html_string += task + '\n\nSC\n'
 # Remove unnecessary SC at the end
