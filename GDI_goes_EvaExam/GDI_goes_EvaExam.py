@@ -2,7 +2,7 @@ import mammoth.documents
 import mammoth.transforms
 import re
 
-fileobj="Sammlung.docx"
+fileobj="Z:\GDI-Prüfungen\Aufgabensammlung\HiWis\Hannes\EvaExam-Format.docx"
 
 html_string = mammoth.convert_to_html(
     fileobj,
@@ -39,7 +39,7 @@ html_string = tasks[0] + '\n\nSC\n'
 for task in tasks[1:]:
     difficulty = 0
     # Find answers
-    answer = re.compile(r'(?:<[\w/]*?>)*(\d\t)')
+    answer = re.compile(r'(?:<[\w/]*?>)*(\d\t){1,1}')
     if answer.findall(task):
         # Extract difficulty
         for digit_tab in answer.findall(task):
@@ -48,7 +48,7 @@ for task in tasks[1:]:
         task = answer.sub(r'\n\1', task)
         # Split question and answers to substitute tabs with html
         question_and_answer = answer.split(task, 1)
-        task = rreplace(question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;'), '\n', '', 1) + f' <b>({difficulty}P)</b>\n' + question_and_answer[1] + question_and_answer[2].replace('<br>', '\n')
+        task = rreplace(question_and_answer[0].replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;'), '\n', '', 1) + f' <b></sub></sup>({difficulty}P)</b>\n' + question_and_answer[1] + question_and_answer[2].replace('<br>', '\n')
         task = re.compile(r'((Explanation: )[\w/]+)').sub(r'\1\nDifficulty: ' + str(difficulty) + '\n', task)
     html_string += task + '\n\nSC\n'
 # Remove unnecessary SC at the end
