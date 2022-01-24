@@ -2,7 +2,10 @@ import mammoth.documents
 import mammoth.transforms
 import re
 
-fileobj="Z:\GDI-Prüfungen\Aufgabensammlung\HiWis\Hannes\EvaExam-Format.docx"
+# This script converts a preformatted .docx into raw text that can be pasted into an .rtf file which can be imported in EvaExam.
+# Information about the task difficulty is extracted from the answer texts and automatically appended (e.g. "(2P)").
+
+fileobj="input.docx"
 
 html_string = mammoth.convert_to_html(
     fileobj,
