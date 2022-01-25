@@ -46,12 +46,18 @@ def determine_static_mark(student_points, points_to_grades):
     return current_mark
 
 def determine_mark(student_points, points_to_grades_dict):
-    # Determine mark using static grades list (if defined)
+    if not hasattr(determine_mark, 'printed_info'):
+        determine_mark.printed_info = False
+        # Determine mark using static grades list (if defined)
     if ('static_points_to_grades' in globals()):
-        print("Using static grades list. To change to dynamic grades list, comment static_points_to_grades variable.")
+        if not determine_mark.printed_info:
+            print("Using static grades list. To change to dynamic grades list, comment static_points_to_grades variable.")
+            determine_mark.printed_info = True
         return determine_static_mark(student_points, static_points_to_grades)
     # Determine mark using (incomplete) grades list
-    print("Using dynamic grades list. To change to static grades list, uncomment static_points_to_grades variable and assign a points->grades list.")
+    if not determine_mark.printed_info:
+        print("Using dynamic grades list. To change to static grades list, uncomment static_points_to_grades variable and assign a points->grades list.")
+        determine_mark.printed_info = True
     if (student_points in points_to_grades_dict):
         return points_to_grades_dict[student_points]
     # If grades do not include current student_points value, enter correct grade and complement grades list
@@ -62,11 +68,19 @@ def determine_mark(student_points, points_to_grades_dict):
             if mark in valid_grades:
                 points_to_grades_dict[student_points] = mark
                 return mark
+
+def correct_url_encoding(string):
+    encoding_dict = {' ':'%20', '!':'%21','"':'%22','#':'%23','$':'%24','%':'%25','&':'%26',"'":'%27','(':'%28',')':'%29','*':'%2A','+':'%2B',',':'%2C','-':'%2D','.':'%2E','/':'%2F',':':'%3A',';':'%3B','<':'%3C','=':'%3D','>':'%3E','?':'%3F','@':'%40','[':'%5B','\\':'%5C',']':'%5D','{':'%7B','|':'%7C','}':'%7D'}
+    for key, val in encoding_dict.items():
+        string = string.replace(key, val)
+    return string
         
 if __name__ == "__main__":
     points_to_give = int(input("How many points should the successful students receive? "))
     user = input("Enter username for lehreadm: ")
     password = input("Enter password for lehreadm: ")
+    user = correct_url_encoding(user)
+    password = correct_url_encoding(password)
     # Get Mat.-Nr. of students who passed their online exam
     driver = webdriver.Chrome(executable_path=ChromeDriverManager().install())
     successful_student_site = f'https://{user}:{password}@lehreadm.ihr.uni-stuttgart.de/#!u-statistic/'
