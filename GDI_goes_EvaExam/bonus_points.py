@@ -5,13 +5,16 @@ from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 import csv
 import time
+import sys
 
-# This script modifies an EvaExam grades export with data from lehreadm.ihr.uni-stuttgart.de to assign bonus points to students who passed the online exam
-# Grades are also updated using either a dynamic (self-generated) grades list or a static grades list
+
+print("This script generates an updated EvaExam grades export (updated_grades.csv) from an original export (grades.csv) which must be places inside the script root directory.")
+print("It uses data from lehreadm.ihr.uni-stuttgart.de to assign bonus points to students who passed the online exam.")
+print("Their grades are then updated using either a self-generated grades list from the other students' data where missing data points must be inputted interactively by the user or using a static grades list (static_points_to_grades) which can be defined inside the script itself.")
 
 valid_grades = [1.0,1.3,1.7,2.0,2.3,2.7,3.0,3.3,3.7,4.0,5.0]
 
-# Manually set static grades list, just uncomment and adapt grades (optionaler statischer Notenschlüssel - es werden dann keine Noten abgefragt!)
+# Manually set static grades list, just uncomment and adapt grades (optionaler statischer Notenschlüssel - es werden dann keine Noten interaktiv abgefragt!)
 #static_points_to_grades = [(4.0,10),(3.7,15),(3.3,20),(3.0,25),(2.7,30),(2.3,37),(2.0,40),(1.7,48),(1.3,50),(1.0,55)]
 
 def wait_for(condition_function):
@@ -76,31 +79,48 @@ def correct_url_encoding(string):
     return string
         
 if __name__ == "__main__":
-    points_to_give = int(input("How many points should the successful students receive? "))
-    user = input("Enter username for lehreadm: ")
-    password = input("Enter password for lehreadm: ")
-    user = correct_url_encoding(user)
-    password = correct_url_encoding(password)
-    # Get Mat.-Nr. of students who passed their online exam
-    driver = webdriver.Chrome(executable_path=ChromeDriverManager().install())
-    successful_student_site = f'https://{user}:{password}@lehreadm.ihr.uni-stuttgart.de/#!u-statistic/'
-    with wait_for_page_load(driver):
-        driver.get(successful_student_site)
-    html = driver.page_source
-    html = driver.execute_script("return document.documentElement.innerHTML")
-    soup = BeautifulSoup(html, 'lxml')
-    successful_student_classes = soup.find_all('a', class_="GOBJYLXBHR-de-stuttgart-uni-ihr-webselftestpro-admin-client-util-UserWidget_BinderImpl_GenCss_style-title")
+    import_successful_student_numbers = None
+    while (import_successful_student_numbers != 'Y' and import_successful_student_numbers != 'N'):
+        import_successful_student_numbers = (input("Do you want to import an existing successful student file (successful_student_numbers.csv) from a previous run of this script? Choosing 'N' will load the data from lehreadm-Portal instead. [Y/N] "))
+    # Get successful student data from Lehreportal
     successful_student_numbers = []
-    for successful_student in successful_student_classes:
-        successful_student_numbers.append(int(successful_student.text[0:7]))
-    print (f"Imported {len(successful_student_numbers)} students!")
-    driver.close()
+    if (import_successful_student_numbers == 'N'):
+        user = input("Enter username for lehreadm: ")
+        password = input("Enter password for lehreadm: ")
+        user = correct_url_encoding(user)
+        password = correct_url_encoding(password)
+        # Get Mat.-Nr. of students who passed their online exam
+        driver = webdriver.Chrome(executable_path=ChromeDriverManager().install())
+        successful_student_site = f'https://{user}:{password}@lehreadm.ihr.uni-stuttgart.de/#!u-statistic/'
+        with wait_for_page_load(driver):
+            driver.get(successful_student_site)
+        html = driver.page_source
+        html = driver.execute_script("return document.documentElement.innerHTML")
+        soup = BeautifulSoup(html, 'lxml')
+        successful_student_classes = soup.find_all('a', class_="GOBJYLXBHR-de-stuttgart-uni-ihr-webselftestpro-admin-client-util-UserWidget_BinderImpl_GenCss_style-title")
+        for successful_student in successful_student_classes:
+            successful_student_numbers.append(int(successful_student.text[0:7]))
+        print (f"Imported {len(successful_student_numbers)} students!")
+        driver.close()
+        export_successful_student_numbers = (input("Do you want to export as successful_student_numbers.csv? Choosing 'N' will instead directly write the data from lehreadm-Portal to your EvaExam file [Y/N]"))
+        if (export_successful_student_numbers == 'Y'):
+            with open('successful_student_numbers.csv', 'w', newline='\n') as file:
+                 wr = csv.writer(file)
+                 wr.writerow(successful_student_numbers)
+            sys.exit("Export File successful_student_numbers.csv was written! Exiting...")
+    # Import student numbers from file
+    else:
+        with open('successful_student_numbers.csv', newline='\n') as file:
+            reader = csv.reader(file)
+            successful_student_numbers = [int(f) for f in (list(reader)[0])]
     # Import EvaExam export file, change points and grades accordingly for students who passed their online exam
-    students = pd.read_csv("gradestest.csv", encoding='latin1', delimiter=';', decimal=',')
+    students = pd.read_csv("grades.csv", encoding='latin1', delimiter=';', decimal=',')
     points_to_grades_dict = {}
     # Determine grades list (Notenschlüssel)
     for student in students.to_dict('records'):
         points_to_grades_dict[student['Summe Punkte']] = student['Note']
+    # Alter grades in EvaExam File
+    points_to_give = int(input("How many points should the successful students receive? "))
     students['Summe Punkte'] = students[['Prüfungsteilnehmer-ID','Summe Punkte']].apply(lambda x: x['Summe Punkte'] + points_to_give if x['Prüfungsteilnehmer-ID'] in successful_student_numbers else x['Summe Punkte'], axis=1)
     students['Note'] = students[['Prüfungsteilnehmer-ID', 'Summe Punkte', 'Note']].apply(lambda x: determine_mark(x['Summe Punkte'], points_to_grades_dict) if x['Prüfungsteilnehmer-ID'] in successful_student_numbers else x['Note'], axis=1).astype(float)
-    students.to_csv("gradesresults.csv", index=False, encoding='latin1', sep=';', decimal=',')
+    students.to_csv("updated_grades.csv", index=False, encoding='latin1', sep=';', decimal=',')
